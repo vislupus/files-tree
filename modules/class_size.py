@@ -12,15 +12,15 @@ class Structure():
 class File_tree():
     """This is a module for visualizing the file tree and the size of files."""
 
-    def __init__(self, runtests=False):
+    def __init__(self, runtests=True):
         self.root_path = os.getcwd()
         self.data = {}
         self.level_add = set()
         self.level_rem = set()
         self.fold = []
 
-        # if runtests:
-        #     self.traverse()
+        if runtests:
+            self.traverse()
 
 
     def size_con(self, num):
@@ -28,8 +28,9 @@ class File_tree():
 
 
     def add_dict(self, obj, parent, folder):
-        if (parent in obj) and (folder not in obj[parent]['folders']):
-            obj[parent]['folders'][folder] = vars(Structure())
+        if parent in obj:
+            if folder not in obj[parent]['folders']:
+                obj[parent]['folders'][folder] = vars(Structure())
 
         for p in obj:
             if p != parent:
@@ -69,20 +70,27 @@ class File_tree():
         for root, dirs, files in os.walk(self.root_path):
             for file in files:
                 file_path = os.path.join(root, file)
-
+                
                 folder_path = os.path.dirname(file_path)
                 folder_p = Path(folder_path)
                 folder_parent_path = str(Path(*folder_p.parts[:-1]))
 
-                if folder_path == self.root_path:
+                # check if it is on the root level
+                if folder_path in self.root_path:
                     if folder_path not in self.data:
                         self.data[folder_path] = vars(Structure())
-
+                    
+                    # add files on root level
                     self.data[folder_path]['files'][file_path] = os.path.getsize(file_path)
+
+                    for dir in dirs:
+                        if dir not in self.data[folder_path]['folders']:
+                            self.data[folder_path]['folders'][os.path.join(folder_path, dir)] = vars(Structure())
                 else:
                     self.add_dict(self.data, folder_parent_path, folder_path)
 
                 self.add_files(self.data, folder_parent_path, folder_path, file_path)
+
 
 
         paths = list(self.file_paths(self.data))
@@ -95,8 +103,8 @@ class File_tree():
                     self.add_size(self.data, v, key)
 
 
-        # self.read_tree(self.data)
-        return self.data
+        self.read_tree(self.data)
+        # return self.data
 
 
 
@@ -106,8 +114,7 @@ class File_tree():
         tee = '├── '
         last = '└── '
 
-
-        for k, v in obj.items():
+        for n, (k, v) in enumerate(obj.items()):
             name = str(Path(*Path(k).parts[-1:]))
            
             if name == 'folders':
@@ -129,8 +136,13 @@ class File_tree():
 
                 text = ""
                 for i in range(level):
+                    # print('folder', n+1, len(obj))
                     if i + 1 == level:
-                        text += last
+                        # text += last
+                        if n+1 == len(obj):
+                            text += last
+                        else:
+                            text += tee
                     elif name in self.fold:
                         self.level_rem.add(level - 1)
                         self.level_add.discard(level)
@@ -155,7 +167,11 @@ class File_tree():
                         self.level_add.discard(level)
 
                         if i + 1 == level:
-                            text += last
+                            if n+1 == len(obj):
+                                text += last
+                            else:
+                                text += tee
+
                         elif (i + 1 in self.level_add) and (i + 1 < level - 1):
                             text += branch
                         else:
@@ -164,4 +180,6 @@ class File_tree():
                     print(f"""{text}{name} - {self.size_con(v)}""")
 
 
-print(__name__)
+# print(__name__)
+
+File_tree()
