@@ -18,6 +18,7 @@ class File_tree():
         self.level_add = set()
         self.level_rem = set()
         self.fold = []
+        self.exclude_dirs = [".git", ".vscode", "modules"]
 
         if runtests:
             self.traverse()
@@ -31,6 +32,14 @@ class File_tree():
         if parent in obj:
             if folder not in obj[parent]['folders']:
                 obj[parent]['folders'][folder] = vars(Structure())
+
+                dirs = [item for item in os.listdir(folder) if os.path.isdir(os.path.join(folder, item))]
+
+                for dir in dirs:
+                    if not dir in self.exclude_dirs:
+                        if dir not in obj[parent]['folders'][folder]['folders']:
+                            new_dir_child = os.path.join(folder, dir)
+                            obj[parent]['folders'][folder]['folders'][new_dir_child] = vars(Structure())
 
         for p in obj:
             if p != parent:
@@ -67,8 +76,6 @@ class File_tree():
 
 
     def traverse(self):
-        exclude_dirs = [".git", ".vscode", "modules"]
-
         for root, dirs, files in os.walk(self.root_path):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -88,12 +95,12 @@ class File_tree():
                     # add directories on root level
                     for dir in dirs:
                         # exclude some directories
-                        if not dir in exclude_dirs:
+                        if not dir in self.exclude_dirs:
                             if dir not in self.data[folder_path]['folders']:
                                 self.data[folder_path]['folders'][os.path.join(folder_path, dir)] = vars(Structure())
                 else:
                     # exclude some directories
-                    if not any(exclude_dir in folder_path for exclude_dir in exclude_dirs):
+                    if not any(exclude_dir in folder_path for exclude_dir in self.exclude_dirs):
                         self.add_dict(self.data, folder_parent_path, folder_path)
                         self.add_files(self.data, folder_parent_path, folder_path, file_path)
 
@@ -122,7 +129,8 @@ class File_tree():
 
         for n, (k, v) in enumerate(obj.items()):
             name = str(Path(*Path(k).parts[-1:]))
-           
+            # print(level, n, self.level_add)
+            # if we are on root level
             if name == 'folders':
                 if level not in self.level_rem:
                     self.level_add.add(level)
@@ -133,7 +141,8 @@ class File_tree():
                     size = obj[k]['size']
                 except:
                     pass
-
+                
+                # print(len(obj[k].keys()))
                 if ('folders' not in obj[k].keys()) and (len(obj[k].keys()) > 1):
                     root, ext = os.path.splitext(list(obj[k].keys())[0])
                     if ext == "":
