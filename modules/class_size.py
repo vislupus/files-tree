@@ -26,20 +26,58 @@ class File_tree():
 
     def size_con(self, num):
         return f"{num/1000000:.1f} MB"
+    
+
+    def sub_add_dic(self, obj, parent, folder):
+        print(parent)
+        print(folder)
+        dirs = [item for item in os.listdir(folder) if os.path.isdir(os.path.join(folder, item))]
+        print("++ ", dirs)
+        print(obj)
+
+        for dir in dirs:
+            if not dir in self.exclude_dirs:
+                new_dir_child = os.path.join(folder, dir)
+                obj[new_dir_child] = vars(Structure())
+
+                print(new_dir_child)
+                print([item for item in os.listdir(new_dir_child) if os.path.isdir(os.path.join(new_dir_child, item))])
+
+                self.sub_add_dic(obj[new_dir_child]['folders'], folder, new_dir_child)
+                # print(obj[parent]['folders'][folder]['folders'])
+
+                    
+
 
 
     def add_dict(self, obj, parent, folder):
+        # print("==", parent)
+        # print(folder)
+        # print([item for item in os.listdir(parent) if os.path.isdir(os.path.join(parent, item))])
+        # folder_path = Path(self.root_path)
+        # last_folder = Path(*Path(folder).parts[len(folder_path.parts):])
+        # level = len(folder_path.parts) - folder_path.parts.index(last_folder) - 1
+        # print(len(folder_path.parts), len(last_folder.parts))
+        # print(Path().joinpath(*Path(folder).parts[-4:]))
         if parent in obj:
+            print(" -- ", folder)
             if folder not in obj[parent]['folders']:
                 obj[parent]['folders'][folder] = vars(Structure())
 
-                dirs = [item for item in os.listdir(folder) if os.path.isdir(os.path.join(folder, item))]
+                self.sub_add_dic(obj[parent]['folders'][folder]['folders'], parent, folder)
 
-                for dir in dirs:
-                    if not dir in self.exclude_dirs:
-                        if dir not in obj[parent]['folders'][folder]['folders']:
-                            new_dir_child = os.path.join(folder, dir)
-                            obj[parent]['folders'][folder]['folders'][new_dir_child] = vars(Structure())
+                # dirs = [item for item in os.listdir(folder) if os.path.isdir(os.path.join(folder, item))]
+                # print("++ ", dirs)
+
+                # for dir in dirs:
+                #     if not dir in self.exclude_dirs:
+                #         if dir not in obj[parent]['folders'][folder]['folders']:
+                #             new_dir_child = os.path.join(folder, dir)
+                #             obj[parent]['folders'][folder]['folders'][new_dir_child] = vars(Structure())
+
+                #             print(new_dir_child)
+                #             print([item for item in os.listdir(new_dir_child) if os.path.isdir(os.path.join(new_dir_child, item))])
+
 
         for p in obj:
             if p != parent:
@@ -129,11 +167,13 @@ class File_tree():
 
         for n, (k, v) in enumerate(obj.items()):
             name = str(Path(*Path(k).parts[-1:]))
-            # print(level, n, self.level_add)
-            # if we are on root level
+            # print(level, n, self.level_add, k)
+            # print(self.level_add)
+            # remove level with folders
             if name == 'folders':
                 if level not in self.level_rem:
                     self.level_add.add(level)
+                    # print(138, self.level_add)
 
             if isinstance(obj[k], dict):
                 size = 0
@@ -142,26 +182,45 @@ class File_tree():
                 except:
                     pass
                 
-                # print(len(obj[k].keys()))
+                # print(obj[k].keys(), 
+                #       'folders' not in obj[k].keys(), len(obj[k].keys()) > 1, 
+                #       ('folders' not in obj[k].keys()) and (len(obj[k].keys()) > 1))
                 if ('folders' not in obj[k].keys()) and (len(obj[k].keys()) > 1):
                     root, ext = os.path.splitext(list(obj[k].keys())[0])
                     if ext == "":
-                        self.fold.append(str(Path(*Path(list(obj[k].keys())[-1]).parts[-1:])))
+                        # self.fold.append(str(Path(*Path(list(obj[k].keys())[-1]).parts[-1:])))
+                        # print(self.fold)
                         self.level_add.add(level + 1)
+                        # print(155, self.level_add)
 
                 text = ""
                 for i in range(level):
                     if i + 1 == level:
-                        if n+1 == len(obj):
-                            text += last
-                        else:
-                            text += tee
-                    elif name in self.fold:
-                        self.level_rem.add(level - 1)
-                        self.level_add.discard(level)
+                        if n + 1 == len(obj):
+                            # print("end", self.level_add)
+                            self.level_add.add(level + 1)
 
-                        text += branch
+                            text += last
+
+                            self.level_rem.add(level - 1)
+                            self.level_add.discard(level)
+                        else:
+                            # print("start", self.level_add)
+
+                            self.level_add.add(level + 1)
+
+                            text += tee
+                    # elif name in self.fold:
+                        # self.level_rem.add(level - 1)
+                        # self.level_add.discard(level)
+                        # print(168, self.level_add)
+
+                        # text += branch
                     elif i + 1 in self.level_add:
+                        # self.level_rem.add(level - 1)
+                        # self.level_add.discard(level)
+                        # print(173, self.level_add)
+
                         text += branch
                     else:
                         text += space
@@ -177,13 +236,20 @@ class File_tree():
                 if k != "size":
                     text = ""
                     for i in range(level):
-                        self.level_rem.add(level - 1)
-                        self.level_add.discard(level)
+                        # self.level_rem.add(level - 1)
+                        # self.level_add.discard(level)
+
+                        # print(190, self.level_add)
 
                         if i + 1 == level:
-                            if n+1 == len(obj):
+                            if n + 1 == len(obj):
+                                # self.level_rem.add(level - 1)
+                                # self.level_add.discard(level)
+
                                 text += last
                             else:
+                                # self.level_add.add(level + 1)
+
                                 text += tee
 
                         elif (i + 1 in self.level_add) and (i + 1 < level - 1):
