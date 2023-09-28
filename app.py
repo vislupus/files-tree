@@ -1,9 +1,4 @@
-# import sys
-# sys.path.append( '/modules' )
-# from class_size import root as root
-
 from modules.class_size import File_tree
-
 
 def main():
     files = File_tree()
