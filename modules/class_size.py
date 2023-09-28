@@ -67,10 +67,12 @@ class File_tree():
 
 
     def traverse(self):
+        exclude_dirs = [".git", ".vscode", "modules"]
+
         for root, dirs, files in os.walk(self.root_path):
             for file in files:
                 file_path = os.path.join(root, file)
-                
+
                 folder_path = os.path.dirname(file_path)
                 folder_p = Path(folder_path)
                 folder_parent_path = str(Path(*folder_p.parts[:-1]))
@@ -83,13 +85,17 @@ class File_tree():
                     # add files on root level
                     self.data[folder_path]['files'][file_path] = os.path.getsize(file_path)
 
+                    # add directories on root level
                     for dir in dirs:
-                        if dir not in self.data[folder_path]['folders']:
-                            self.data[folder_path]['folders'][os.path.join(folder_path, dir)] = vars(Structure())
+                        # exclude some directories
+                        if not dir in exclude_dirs:
+                            if dir not in self.data[folder_path]['folders']:
+                                self.data[folder_path]['folders'][os.path.join(folder_path, dir)] = vars(Structure())
                 else:
-                    self.add_dict(self.data, folder_parent_path, folder_path)
-
-                self.add_files(self.data, folder_parent_path, folder_path, file_path)
+                    # exclude some directories
+                    if not any(exclude_dir in folder_path for exclude_dir in exclude_dirs):
+                        self.add_dict(self.data, folder_parent_path, folder_path)
+                        self.add_files(self.data, folder_parent_path, folder_path, file_path)
 
 
 
@@ -136,9 +142,7 @@ class File_tree():
 
                 text = ""
                 for i in range(level):
-                    # print('folder', n+1, len(obj))
                     if i + 1 == level:
-                        # text += last
                         if n+1 == len(obj):
                             text += last
                         else:
@@ -152,6 +156,7 @@ class File_tree():
                         text += branch
                     else:
                         text += space
+
                 
                 if (name!="folders") and (name!="files"):
                     print(f"""{text}{name} - {self.size_con(size)}""")
